@@ -1,0 +1,350 @@
+# UI 가이드: AI 뉴스 수집기
+
+화면을 만들 때 따르는 기준이다. 기능 요구사항은 [PRD.md](./PRD.md)가 우선한다.
+이 문서는 **목표 디자인**이며, 아직 코드에 반영되지 않은 항목이 있다(§10 참고).
+
+## 1. 디자인 원칙
+
+1. **읽기가 먼저다.** 제목과 요약이 가장 눈에 띄고, 출처·시각 같은 메타 정보는 한 단계 약하게 표시한다.
+2. **장식을 줄인다.** 여백과 얇은 테두리로 구분한다. 그라데이션과 큰 그림자는 쓰지 않는다.
+3. **강조색은 하나만 쓴다.** 선택 상태, 주요 버튼, 포커스 표시에만 사용한다.
+4. **상태를 항상 보여준다.** 불러오기, 비어 있음, 실패, 저장 완료를 화면에 표시한다.
+
+앱 이름은 화면과 메타데이터에서 **AI 뉴스 수집기**로 표기한다.
+
+## 2. 디자인 토큰
+
+Tailwind CSS v4를 사용한다. 설정 파일 없이 `src/app/globals.css`의 `@theme`에 토큰을 정의한다.
+
+### 2.1 색상
+
+컴포넌트에서는 `bg-white`, `text-gray-500` 같은 고정 색 대신 아래 토큰을 쓴다. 라이트·다크 모드는 시스템 설정(`prefers-color-scheme`)을 따르고, 토큰 값만 바뀌므로 `dark:` 클래스는 필요 없다.
+
+| 토큰 | 라이트 | 다크 | 용도 |
+|---|---|---|---|
+| `background` | `#f8fafc` | `#0b0f17` | 페이지 배경 |
+| `surface` | `#ffffff` | `#151b26` | 헤더, 카드, 대화상자 |
+| `foreground` | `#0f172a` | `#e5e7eb` | 제목, 본문 |
+| `muted` | `#475569` | `#9ca3af` | 메타 정보, 보조 설명 |
+| `border` | `#e2e8f0` | `#273041` | 테두리, 구분선 |
+| `accent` | `#2563eb` | `#60a5fa` | 주요 버튼, 링크, 포커스 링 |
+| `accent-foreground` | `#ffffff` | `#0b0f17` | `accent` 배경 위의 글자 |
+| `accent-soft` | `#eff6ff` | `#172a46` | 카테고리 배지 배경 |
+| `danger` | `#b91c1c` | `#f87171` | 삭제, 오류 |
+| `success` | `#15803d` | `#4ade80` | 저장 완료 |
+
+```css
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  --background: #f8fafc;
+  --surface: #ffffff;
+  --foreground: #0f172a;
+  --muted: #475569;
+  --border: #e2e8f0;
+  --accent: #2563eb;
+  --accent-foreground: #ffffff;
+  --accent-soft: #eff6ff;
+  --danger: #b91c1c;
+  --success: #15803d;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --background: #0b0f17;
+    --surface: #151b26;
+    --foreground: #e5e7eb;
+    --muted: #9ca3af;
+    --border: #273041;
+    --accent: #60a5fa;
+    --accent-foreground: #0b0f17;
+    --accent-soft: #172a46;
+    --danger: #f87171;
+    --success: #4ade80;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --font-sans: var(--font-geist-sans), "Apple SD Gothic Neo", "Malgun Gothic",
+    "Noto Sans KR", sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+```
+
+### 2.2 타이포그래피
+
+영문과 숫자는 Geist, 한글은 시스템 글꼴을 쓴다.
+
+| 요소 | 클래스 |
+|---|---|
+| 앱 이름 | `text-lg font-semibold tracking-tight` |
+| 화면·대화상자 제목 | `text-xl font-semibold` |
+| 카드 제목 | `text-base font-semibold leading-snug` |
+| 요약 본문 | `text-[15px] leading-7` |
+| 버튼, 카테고리 칩 | `text-sm font-medium` |
+| 메타 정보, 배지 | `text-xs` |
+
+- 한글은 단어 중간에서 줄이 바뀌지 않도록 제목과 본문에 `break-keep`을 쓴다. 긴 영문이나 URL이 넘치지 않도록 `wrap-anywhere`를 함께 쓴다.
+- 본문 글자는 `text-xs`보다 작게 만들지 않는다.
+
+### 2.3 간격과 모양
+
+| 항목 | 값 |
+|---|---|
+| 콘텐츠 최대 폭 | `max-w-6xl` |
+| 좌우 여백 | `px-4 sm:px-6` |
+| 카드 사이 간격 | `gap-4` |
+| 카드 안쪽 여백 | `p-5` |
+| 카드·대화상자 모서리 | `rounded-xl` |
+| 버튼·입력창 모서리 | `rounded-lg` |
+| 칩·배지 모서리 | `rounded-full` |
+| 그림자 | 기본 없음, 카드 hover에만 `shadow-sm` |
+
+## 3. 화면 구조
+
+메인 화면은 뉴스 카드 대시보드다. 위에서부터 **헤더 → 카테고리 바 → 카드 목록** 순서로 배치한다.
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│ AI 뉴스 수집기                      [뉴스 가져오기]   (계정) │  헤더
+├──────────────────────────────────────────────────────────────┤
+│ (전체)(모델/연구)(제품/서비스)(투자/비즈니스)(규제/정책)     │  카테고리 바
+│ (기타)(+ 카테고리 추가)                                      │
+│                                                              │
+│ ┌────────────────┐ ┌────────────────┐ ┌────────────────┐     │
+│ │ [배지]         │ │ [배지]         │ │ [배지]         │     │  카드 목록
+│ │ 제목           │ │ 제목           │ │ 제목           │     │
+│ │ 요약 미리보기  │ │ 요약 미리보기  │ │ 요약 미리보기  │     │
+│ │ 출처 · 시각    │ │ 출처 · 시각    │ │ 출처 · 시각    │     │
+│ │ 원문    [저장] │ │ 원문    [저장] │ │ 원문    [저장] │     │
+│ └────────────────┘ └────────────────┘ └────────────────┘     │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### 3.1 헤더
+
+- 왼쪽에 앱 이름, 오른쪽에 `뉴스 가져오기` 버튼과 Clerk `UserButton`을 둔다.
+- 클래스: `border-b border-border bg-surface`. 안쪽 콘텐츠는 본문과 같은 최대 폭에 맞춘다.
+- 화면이 좁으면 버튼 글자를 `가져오기`로 줄인다. 앱 이름은 줄바꿈하지 않는다(`whitespace-nowrap`).
+
+### 3.2 반응형
+
+| 화면 폭 | 카드 열 수 |
+|---|---|
+| 768px 미만 | 1열 |
+| `md` (768px 이상) | 2열 |
+| `lg` (1024px 이상) | 3열 |
+
+```html
+<main class="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6">
+  <!-- 카테고리 바 -->
+  <ul class="mt-6 grid grid-cols-1 items-start gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <!-- 카드 -->
+  </ul>
+</main>
+```
+
+- 카드는 발행 시각 최신순으로 왼쪽에서 오른쪽, 위에서 아래로 놓는다.
+- `items-start`를 써서 카드 하나를 펼쳐도 같은 줄의 다른 카드가 늘어나지 않게 한다.
+
+## 4. 카테고리 바
+
+카드 목록 바로 위에 두며, 선택한 카테고리의 기사만 보여준다.
+
+### 4.1 구성
+
+순서는 `전체` → 카테고리(생성순) → `미분류` → `+ 카테고리 추가`다.
+
+- `전체`가 기본 선택이며, 한 번에 하나만 선택한다.
+- `미분류`는 미분류 기사가 있을 때만 보여준다. `기타` 카테고리와는 다른 항목이다.
+- **`+ 카테고리 추가` 버튼은 항상 목록의 맨 끝**에 둔다. 점선 테두리로 필터 칩과 구분한다.
+- 칩이 한 줄을 넘으면 줄바꿈한다(`flex-wrap`). 가로 스크롤은 추가 버튼이 가려지므로 쓰지 않는다.
+
+```html
+<nav aria-label="카테고리">
+  <ul class="flex flex-wrap items-center gap-2">
+    <!-- 선택된 칩 -->
+    <li>
+      <button type="button" aria-pressed="true"
+        class="rounded-full border border-accent bg-accent px-4 py-2 text-sm font-medium text-accent-foreground">
+        전체
+      </button>
+    </li>
+    <!-- 선택되지 않은 칩 -->
+    <li>
+      <button type="button" aria-pressed="false"
+        class="rounded-full border border-border bg-surface px-4 py-2 text-sm font-medium text-muted hover:text-foreground">
+        모델/연구
+      </button>
+    </li>
+    <!-- 마지막: 추가 버튼 -->
+    <li>
+      <button type="button"
+        class="rounded-full border border-dashed border-muted px-4 py-2 text-sm font-medium text-muted hover:border-accent hover:text-accent">
+        + 카테고리 추가
+      </button>
+    </li>
+  </ul>
+</nav>
+```
+
+### 4.2 추가·수정·삭제
+
+- 추가 버튼을 누르면 대화상자(`<dialog>`)를 연다.
+- 입력 항목은 **이름**과 **설명**이며 둘 다 필수다. 설명 아래에 "기사를 자동 분류할 때 사용합니다."라고 안내한다.
+- 같은 이름이 있으면 입력창 아래에 "이미 있는 카테고리 이름입니다."를 표시하고 입력값은 유지한다.
+- 수정·삭제는 카테고리를 선택했을 때 카테고리 바 아래에 나오는 `수정`, `삭제` 텍스트 버튼으로 한다. 칩 안에는 버튼을 넣지 않는다. `전체`와 `미분류`에는 표시하지 않는다.
+- 수정은 추가와 같은 대화상자를 사용한다.
+- 삭제 전에 확인 대화상자를 띄운다. 문구: "'{이름}' 카테고리를 삭제할까요? 소속 기사는 '미분류'로 이동합니다."
+- 선택 중인 카테고리를 삭제하면 `전체`로 돌아간다.
+- `미분류`를 선택하면 같은 위치에 `미분류 다시 분류` 버튼을 보여준다.
+
+## 5. 뉴스 카드
+
+### 5.1 구성
+
+위에서부터 다음 순서로 배치한다.
+
+1. 카테고리 배지 (없으면 `미분류`)
+2. 제목: `titleKo`, 번역 전이면 원문 `title`
+3. 요약
+4. 출처 · 발행 시각
+5. `원문 보기` 링크(왼쪽), `Notion 저장` 버튼(오른쪽)
+
+### 5.2 접힘과 펼침
+
+요약은 카드를 열 때 생성한다. 카드는 목록 안에서 바로 펼친다.
+
+| 상태 | 요약 영역 |
+|---|---|
+| 접힘, 요약 있음 | 2줄 미리보기 (`line-clamp-2`) |
+| 접힘, 요약 없음 | "열면 한국어 요약을 만듭니다." |
+| 펼침, 생성 중 | 3줄 스켈레톤 |
+| 펼침, 완료 | 요약 전체 |
+| 펼침, 실패 | "요약을 만들지 못했습니다."와 `다시 시도` 버튼 |
+
+- 제목을 버튼으로 만들어 펼치고 접는다. `aria-expanded`로 상태를 알린다.
+- 카드 전체를 클릭 영역으로 만들지 않는다. 링크·버튼과 클릭이 겹치기 때문이다.
+- 번역 전의 영문 제목에는 `lang="en"`을 붙인다.
+
+```html
+<li class="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5 transition-shadow hover:shadow-sm">
+  <span class="self-start rounded-full bg-accent-soft px-2.5 py-1 text-xs font-medium text-foreground">
+    모델/연구
+  </span>
+
+  <h2 class="text-base font-semibold leading-snug break-keep wrap-anywhere">
+    <button type="button" aria-expanded="false" class="text-left hover:text-accent">
+      카드 제목
+    </button>
+  </h2>
+
+  <p class="line-clamp-2 text-[15px] leading-7 break-keep wrap-anywhere">
+    요약 미리보기
+  </p>
+
+  <p class="text-xs text-muted">
+    TechCrunch · <time datetime="2026-11-25T09:00:00+09:00">11월 25일 09:00</time>
+  </p>
+
+  <div class="flex items-center justify-between border-t border-border pt-3">
+    <a href="https://example.com" target="_blank" rel="noopener noreferrer"
+      class="text-sm font-medium text-accent hover:underline">
+      원문 보기 ↗
+    </a>
+    <button type="button"
+      class="rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-background">
+      Notion 저장
+    </button>
+  </div>
+</li>
+```
+
+### 5.3 발행 시각
+
+한국 시간(`Asia/Seoul`) 기준의 `11월 25일 09:00` 형식으로 표시하고, 올해가 아니면 연도를 붙인다. `<time datetime>`에는 ISO 형식 값을 넣는다.
+
+### 5.4 Notion 저장 버튼
+
+| 상태 | 표시 | 동작 |
+|---|---|---|
+| 저장 전 | `Notion 저장` | 클릭 가능 |
+| 저장 중 | `저장 중…` | 비활성 |
+| 저장 완료 | `✓ 저장됨` (`text-success`) | 비활성 |
+| 실패 | `다시 저장` + 카드 안 오류 문구 (`text-danger`) | 클릭 가능 |
+
+Notion이 연결되지 않았으면 `Notion 저장`을 눌렀을 때 연결 절차를 시작한다.
+
+## 6. 버튼과 입력
+
+| 종류 | 사용처 | 클래스 |
+|---|---|---|
+| 주요 | 뉴스 가져오기, 대화상자의 확인 | `rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90` |
+| 보조 | Notion 저장, 취소, 다시 시도 | `rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-background` |
+| 위험 | 카테고리 삭제 확인 | `rounded-lg border border-danger px-4 py-2 text-sm font-medium text-danger` |
+| 텍스트 | 수정, 삭제 | `px-2 py-2 text-sm text-muted hover:text-foreground` |
+| 입력창 | 카테고리 이름·설명 | `w-full rounded-lg border border-muted bg-surface px-3 py-2 text-base` |
+
+- 한 영역에 주요 버튼은 하나만 둔다.
+- 비활성 상태에는 `disabled:cursor-not-allowed disabled:opacity-50`을 더한다.
+- 입력창에는 항상 `<label>`을 붙인다. 자리표시자로 대신하지 않는다.
+
+## 7. 화면 상태
+
+| 상황 | 표시 |
+|---|---|
+| 목록 불러오는 중 | 카드 모양 스켈레톤 6개 (`animate-pulse motion-reduce:animate-none`) |
+| 뉴스가 하나도 없음 | "아직 수집된 뉴스가 없습니다."와 `뉴스 가져오기` 안내 |
+| 선택한 카테고리가 비어 있음 | "이 카테고리에는 뉴스가 없습니다." |
+| 가져오는 중 | 버튼을 `가져오는 중…`으로 바꾸고 비활성화. 기존 목록은 유지 |
+| 가져오기 완료 | "새 뉴스 {n}건을 가져왔습니다." 또는 "새 뉴스가 없습니다." |
+| 가져오기 실패 | 원인을 알 수 있는 문구와 `다시 시도`. 일부 소스만 실패하면 소스 이름을 표시 |
+
+- 완료·실패 문구는 카테고리 바 위에 표시하고 `role="status"`(실패는 `role="alert"`)를 붙인다.
+- 로그인 필요·접근 거부 화면은 가운데 정렬로 앱 이름, 안내 문구, 버튼 하나를 보여준다.
+
+## 8. 접근성
+
+- 모든 버튼·링크·입력창에 포커스 표시를 둔다: `focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent`. §4~§6의 예시에는 길이를 줄이려고 생략했다.
+- 선택 상태와 저장 상태는 색만으로 구분하지 않는다. 배경 채움, 글자, 아이콘을 함께 바꾼다.
+- 본문 글자와 배경의 명도 대비는 4.5:1 이상을 유지한다. 새 색을 추가하면 라이트·다크 모두 확인한다.
+- 터치 대상의 높이는 36px 이상으로 한다.
+- 대화상자는 `showModal()`로 열고 `Esc`로 닫을 수 있게 하며, 닫으면 열었던 버튼으로 포커스를 돌린다.
+- 키보드만으로 필터 선택, 카드 열기, 저장이 가능해야 한다.
+
+## 9. 문구
+
+- 안내 문장은 `~습니다`체로 쓴다.
+- 버튼은 짧은 동작 표현으로 쓴다: `뉴스 가져오기`, `Notion 저장`, `취소`, `삭제`.
+- 오류 문구에는 무엇이 실패했는지와 다음에 할 일을 담는다.
+
+## 10. 현재 코드와의 차이
+
+2026-11-25 기준. `/dashboard`에 §2의 토큰, 카테고리 필터, 뉴스 카드, 불러오기·빈 목록·조회 실패 화면을 적용했다. 남은 항목은 다음과 같다.
+
+| 항목 | 현재 |
+|---|---|
+| `뉴스 가져오기` 버튼(§3.1)과 가져오기 상태 문구(§7) | 없음 |
+| 요약 생성, 생성 중·실패 상태(§5.2) | 저장된 요약만 표시. 없으면 "아직 한국어 요약이 없습니다." |
+| 카테고리 추가(§4.2) | 버튼만 있고 비활성 |
+| 카테고리 수정·삭제, 미분류 다시 분류(§4.2) | 없음 |
+| Notion 저장(§5.4) | 버튼만 있고 비활성. 저장 여부도 표시하지 않음 |
+| 메인 화면 `/` | 빈 목록 문구만 표시 |

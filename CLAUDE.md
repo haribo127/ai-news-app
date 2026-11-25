@@ -2,7 +2,11 @@
 
 # AI 뉴스 수집기
 
-해외 AI 뉴스를 RSS로 수집해 Claude가 한국어로 번역·요약하고, 카테고리별 카드로 보여주는 개인용 웹앱. 카드의 버튼으로 Notion에 저장한다. 상세 요구사항은 `PRD.md`가 기준이다.
+해외 AI 뉴스를 RSS로 수집해 Claude가 한국어로 번역·요약하고, 카테고리별 카드로 보여주는 개인용 웹앱. 카드의 버튼으로 Notion에 저장한다. 상세 요구사항은 `docs/PRD.md`가 기준이다. 프로젝트 문서는 `docs/`에 둔다.
+
+## UI 가이드
+- 화면이나 컴포넌트를 만들거나 수정하기 전에 `docs/ui.md`를 먼저 읽고 따른다.
+- 색상·타이포그래피·간격은 가이드의 토큰과 클래스를 사용한다. 가이드에 없는 스타일이 필요하면 `docs/ui.md`도 함께 갱신한다.
 
 ## 기술 스택
 - Next.js (App Router, `src/` 구조, alias `@/*`), TypeScript, Tailwind
@@ -40,7 +44,7 @@
 - API 키와 Notion 토큰은 서버에서만 사용한다(클라이언트 번들 노출 금지). 토큰은 암호화 저장.
 - 환경변수: Clerk 키, `DATABASE_URL`, `ANTHROPIC_API_KEY`, Notion OAuth 정보, 토큰 암호화 키, 허용 이메일.
 
-## 구현 단계 (PRD §10)
+## 구현 단계 (docs/PRD.md §10)
 1. 스캐폴딩 + Clerk 로그인 + allowlist
 2. Neon/Drizzle 스키마·마이그레이션
 3. RSS 수집 + 분류 + 카드 목록/필터
