@@ -22,7 +22,7 @@ export async function AuthGate({ children }: { children: React.ReactNode }) {
         <SignOutButton redirectUrl="/">
           <button
             type="button"
-            className="rounded-full bg-foreground px-6 py-3 font-medium text-background"
+            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >
             로그아웃
           </button>
@@ -33,9 +33,13 @@ export async function AuthGate({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <header className="flex items-center justify-between border-b border-foreground/10 px-6 py-4">
-        <span className="font-semibold">AI 뉴스 수집기</span>
-        <UserButton />
+      <header className="border-b border-border bg-surface">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
+          <span className="whitespace-nowrap text-lg font-semibold tracking-tight">
+            AI 뉴스 수집기
+          </span>
+          <UserButton />
+        </div>
       </header>
       {children}
     </>
