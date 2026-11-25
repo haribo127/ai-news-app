@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1795585187493,
+      "tag": "0000_outstanding_timeslip",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795585188082,
+      "tag": "0001_seed_categories",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795585364886,
+      "tag": "0002_add_article_author",
+      "breakpoints": true
+    }
+  ]
+}

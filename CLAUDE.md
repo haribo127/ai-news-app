@@ -14,6 +14,7 @@
 
 ## 명령어
 - `npm run dev` / `npm run build` / `npm run lint`
+- `npm run db:generate`(`src/db/schema.ts` 변경분으로 마이그레이션 생성) / `npm run db:migrate`(`DATABASE_URL_UNPOOLED` 대상에 적용). 새 마이그레이션은 Neon 테스트 브랜치에서 먼저 확인한 뒤 production에 적용한다.
 - 환경변수는 `.env.example` 참고, 실제 값은 `.env.local`에 둔다(커밋 금지).
 
 ## 뉴스 소스
@@ -22,7 +23,7 @@
 
 ## 데이터 모델
 - `categories`: id, name, description, createdAt
-- `articles`: id, url(unique), source, title, excerpt, publishedAt, categoryId(nullable), titleKo, summaryKo(nullable), fetchedAt
+- `articles`: id, url(unique), source, title, author(nullable), excerpt, publishedAt, categoryId(nullable), titleKo, summaryKo(nullable), fetchedAt
 - `notion_connections`: OAuth 토큰/refresh 토큰(암호화), 저장 대상 id
 - `saved_to_notion`: articleId, notionPageId, savedAt
 
@@ -47,7 +48,7 @@
 5. 카테고리 CRUD
 6. Notion MCP 연결 및 저장
 
-현재 진행: 스캐폴딩과 의존성 설치만 완료, 앱 코드는 아직 없음.
+현재 진행: 1~2단계 완료(Clerk 로그인·allowlist, DB 스키마·마이그레이션을 production에 적용). 다음은 3단계.
 
 ## 미결 사항
 - Notion 호스티드 MCP의 OAuth 흐름은 구현 시 최신 문서를 확인한다.

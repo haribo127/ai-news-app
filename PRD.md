@@ -54,7 +54,7 @@
 
 ## 7. 데이터 모델
 - `categories`: id, name, description, createdAt
-- `articles`: id, url(unique), source, title, excerpt, publishedAt, categoryId(nullable), titleKo, summaryKo(nullable), fetchedAt
+- `articles`: id, url(unique), source, title, author(nullable), excerpt, publishedAt, categoryId(nullable), titleKo, summaryKo(nullable), fetchedAt
 - `notion_connections`: OAuth 토큰/refresh 토큰(암호화), 저장 대상 id
 - `saved_to_notion`: articleId, notionPageId, savedAt
 
