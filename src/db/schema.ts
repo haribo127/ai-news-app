@@ -2,6 +2,7 @@ import {
   index,
   integer,
   pgTable,
+  primaryKey,
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
@@ -43,15 +44,35 @@ export const articles = pgTable(
   ],
 );
 
+// 동적 클라이언트 등록으로 받은 클라이언트. 다음 연결과 토큰 갱신에 재사용한다.
+export const notionOauthClients = pgTable(
+  "notion_oauth_clients",
+  {
+    issuer: text("issuer").notNull(),
+    redirectUri: text("redirect_uri").notNull(),
+    clientId: text("client_id").notNull(),
+    // 공개 클라이언트면 null
+    clientSecretEncrypted: text("client_secret_encrypted"),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.issuer, table.redirectUri] })],
+);
+
 export const notionConnections = pgTable("notion_connections", {
   // Clerk 사용자 ID
   userId: text("user_id").primaryKey(),
-  // 토큰은 암호문만 저장한다.
-  accessTokenEncrypted: text("access_token_encrypted").notNull(),
+  // 토큰은 암호문만 저장한다. 연결이 만료되면 null로 지우고 targetId는 남긴다.
+  accessTokenEncrypted: text("access_token_encrypted"),
   refreshTokenEncrypted: text("refresh_token_encrypted"),
   expiresAt: timestamptz("expires_at"),
-  // Notion 저장 대상 ID
+  // 토큰을 발급한 인가 서버
+  issuer: text("issuer"),
+  // 이 시각까지는 한 요청만 토큰을 갱신한다.
+  refreshLockedUntil: timestamptz("refresh_locked_until"),
+  // Notion 저장 대상 데이터 소스 ID
   targetId: text("target_id"),
+  // 이 시각까지는 한 요청만 저장 대상 데이터베이스를 만든다.
+  targetLockedUntil: timestamptz("target_locked_until"),
   updatedAt: timestamptz("updated_at")
     .notNull()
     .defaultNow()
@@ -63,6 +84,7 @@ export const savedToNotion = pgTable("saved_to_notion", {
   articleId: integer("article_id")
     .primaryKey()
     .references(() => articles.id, { onDelete: "cascade" }),
-  notionPageId: text("notion_page_id").notNull(),
+  // null이면 저장 중. savedAt은 저장을 시작한 시각이 된다.
+  notionPageId: text("notion_page_id"),
   savedAt: timestamptz("saved_at").notNull().defaultNow(),
 });

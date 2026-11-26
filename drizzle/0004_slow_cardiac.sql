@@ -1,0 +1,1 @@
+ALTER TABLE "notion_connections" ADD COLUMN "target_locked_until" timestamp with time zone;

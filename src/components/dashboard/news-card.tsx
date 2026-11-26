@@ -12,12 +12,18 @@ export type NewsCardArticle = {
   categoryName: string | null;
   publishedAtIso: string;
   publishedAtLabel: string;
+  savedToNotion: boolean;
 };
 
 export type SummaryRequest =
   | { status: "loading" }
   | { status: "error" }
   | { status: "done"; summary: string };
+
+export type SaveRequest =
+  | { status: "saving" }
+  | { status: "error"; message: string }
+  | { status: "saved" };
 
 const focusRing =
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
@@ -26,15 +32,24 @@ export function NewsCard({
   article,
   request,
   onLoadSummary,
+  saveRequest,
+  onSave,
 }: {
   article: NewsCardArticle;
   request: SummaryRequest | undefined;
   onLoadSummary: () => void;
+  saveRequest: SaveRequest | undefined;
+  onSave: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const summaryId = useId();
   const summary =
     article.summaryKo ?? (request?.status === "done" ? request.summary : null);
+
+  const saved = article.savedToNotion || saveRequest?.status === "saved";
+  const saving = !saved && saveRequest?.status === "saving";
+  const saveError =
+    !saved && saveRequest?.status === "error" ? saveRequest.message : null;
 
   function toggle() {
     // 요청한 적이 없을 때만 만든다. 실패하면 '다시 시도'로 다시 요청한다.
@@ -113,16 +128,33 @@ export function NewsCard({
         >
           원문 보기 ↗
         </a>
-        {/* Notion 저장은 아직 구현하지 않았다. */}
         <button
           type="button"
-          disabled
-          title="준비 중인 기능입니다."
-          className="rounded-lg border border-border px-3 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
+          onClick={onSave}
+          disabled={saved || saving}
+          className={`rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-background disabled:cursor-not-allowed disabled:hover:bg-transparent ${
+            saved ? "text-success" : "disabled:opacity-50"
+          } ${focusRing}`}
         >
-          Notion 저장
+          {saved
+            ? "✓ 저장됨"
+            : saving
+              ? "저장 중…"
+              : saveError
+                ? "다시 저장"
+                : "Notion 저장"}
         </button>
       </div>
+
+      {/* 화면 낭독기가 저장 완료를 읽도록 status 영역은 항상 둔다. */}
+      <p role="status" className="sr-only">
+        {saveRequest?.status === "saved" ? "Notion에 저장했습니다." : ""}
+      </p>
+      {saveError && (
+        <p role="alert" className="text-sm text-danger">
+          {saveError}
+        </p>
+      )}
     </li>
   );
 }

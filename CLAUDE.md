@@ -13,7 +13,7 @@
 - 인증: Clerk (허용 이메일 1개만 접근 가능, allowlist)
 - DB: Neon(Postgres) + Drizzle ORM (`@neondatabase/serverless`, `drizzle-kit`)
 - 번역/요약/분류: Claude API (`@anthropic-ai/sdk`), 분류는 경량 모델
-- Notion: 공식 호스티드 Notion MCP + OAuth (`@modelcontextprotocol/sdk`)
+- Notion: 공식 호스티드 Notion MCP + OAuth (`@modelcontextprotocol/client` v2)
 - RSS: `rss-parser`
 
 ## 명령어
@@ -52,7 +52,7 @@
 5. 카테고리 CRUD
 6. Notion MCP 연결 및 저장
 
-현재 진행: 1~2단계 완료(Clerk 로그인·allowlist, DB 스키마·마이그레이션을 production에 적용). 3~4단계는 코드 작성 완료(RSS 수집, 카드 목록/필터, 가져올 때 제목 번역·분류, 카드를 열 때 요약). 남은 것은 앱에서의 전체 흐름 확인이다. 요약은 RSS 발췌만으로 만든다. 5단계는 코드 작성 완료(카테고리 추가·수정·삭제, 미분류 재분류).
+현재 진행: 1~2단계 완료(Clerk 로그인·allowlist, DB 스키마·마이그레이션을 production에 적용). 3~4단계는 코드 작성 완료(RSS 수집, 카드 목록/필터, 가져올 때 제목 번역·분류, 카드를 열 때 요약). 남은 것은 앱에서의 전체 흐름 확인이다. 요약은 RSS 발췌만으로 만든다. 5단계는 코드 작성 완료(카테고리 추가·수정·삭제, 미분류 재분류). 6단계는 `docs/notion-plan.md`에 따라 OAuth 연결·저장 API·카드 버튼까지 코드를 작성했다. 마이그레이션 `0003`·`0004`는 production에 적용했다. 앱에서 연결과 저장(기사 2건)을 확인했다. `docs/notion-plan.md` §7의 나머지 검증이 남았다.
 
 ## 미결 사항
 - Notion 호스티드 MCP의 OAuth 흐름은 구현 시 최신 문서를 확인한다.

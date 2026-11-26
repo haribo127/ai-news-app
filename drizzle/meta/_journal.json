@@ -22,6 +22,20 @@
       "when": 1795585364886,
       "tag": "0002_add_article_author",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795681690931,
+      "tag": "0003_modern_hammerhead",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795682355132,
+      "tag": "0004_slow_cardiac",
+      "breakpoints": true
     }
   ]
 }

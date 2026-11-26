@@ -1,7 +1,7 @@
 import "server-only";
 import { asc, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { articles, categories } from "@/db/schema";
+import { articles, categories, savedToNotion } from "@/db/schema";
 import { getAccess } from "./auth";
 
 /** 대시보드에 필요한 카테고리(생성순)와 기사(발행 최신순)를 가져온다. */
@@ -31,11 +31,20 @@ export async function getDashboardData() {
         publishedAt: articles.publishedAt,
         categoryId: articles.categoryId,
         categoryName: categories.name,
+        // 페이지 ID가 없는 기록은 저장 중이거나 중단된 것이다.
+        notionPageId: savedToNotion.notionPageId,
       })
       .from(articles)
       .leftJoin(categories, eq(articles.categoryId, categories.id))
+      .leftJoin(savedToNotion, eq(savedToNotion.articleId, articles.id))
       .orderBy(desc(articles.publishedAt), desc(articles.id)),
   ]);
 
-  return { categories: categoryRows, articles: articleRows };
+  return {
+    categories: categoryRows,
+    articles: articleRows.map(({ notionPageId, ...article }) => ({
+      ...article,
+      savedToNotion: notionPageId !== null,
+    })),
+  };
 }

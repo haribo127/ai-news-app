@@ -6,6 +6,7 @@ import { CategoryActions, useReclassify } from "./category-toolbar";
 import {
   NewsCard,
   type NewsCardArticle,
+  type SaveRequest,
   type SummaryRequest,
 } from "./news-card";
 import { Pagination } from "./pagination";
@@ -34,6 +35,7 @@ export function NewsBoard({
   const [page, setPage] = useState(1);
   // 페이지나 필터를 바꿔도 남도록 이번에 만든 요약을 여기에 보관한다.
   const [requests, setRequests] = useState<Record<number, SummaryRequest>>({});
+  const [saves, setSaves] = useState<Record<number, SaveRequest>>({});
 
   const reclassification = useReclassify();
   const allChipRef = useRef<HTMLButtonElement>(null);
@@ -82,7 +84,65 @@ export function NewsBoard({
       update({ status: "done", summary });
     } catch (error) {
       console.error(error);
-      update({ status: "error" });
+      // 그사이 Notion 저장이 요약을 받아 왔으면 그대로 둔다.
+      setRequests((current) =>
+        current[id]?.status === "done"
+          ? current
+          : { ...current, [id]: { status: "error" } },
+      );
+    }
+  }
+
+  async function saveToNotion(id: number) {
+    const update = (request: SaveRequest) =>
+      setSaves((current) => ({ ...current, [id]: request }));
+
+    update({ status: "saving" });
+    try {
+      const response = await fetch(`/api/articles/${id}/notion`, {
+        method: "POST",
+      });
+      const body = (await response.json()) as {
+        code?: string;
+        summary?: string | null;
+      };
+
+      if (body.code === "not_connected") {
+        // 뒤로 돌아왔을 때 '저장 중'이 남지 않게 지우고 연결을 시작한다.
+        setSaves((current) => {
+          const next = { ...current };
+          delete next[id];
+          return next;
+        });
+        // Notion 승인 화면으로 넘어가는 API 경로라서 전체 이동이 필요하다.
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+        window.location.assign("/api/notion/connect");
+        return;
+      }
+      if (body.code === "in_progress") {
+        update({
+          status: "error",
+          message: "저장이 진행 중입니다. 잠시 후 다시 눌러 주세요.",
+        });
+        return;
+      }
+      if (!response.ok) throw new Error(`저장 요청 실패: ${response.status}`);
+
+      // 저장하면서 만든 요약도 카드에 보여준다.
+      const { summary } = body;
+      if (summary) {
+        setRequests((current) => ({
+          ...current,
+          [id]: { status: "done", summary },
+        }));
+      }
+      update({ status: "saved" });
+    } catch (error) {
+      console.error(error);
+      update({
+        status: "error",
+        message: "Notion에 저장하지 못했습니다. 다시 시도해 주세요.",
+      });
     }
   }
 
@@ -176,6 +236,8 @@ export function NewsBoard({
               article={article}
               request={requests[article.id]}
               onLoadSummary={() => loadSummary(article.id)}
+              saveRequest={saves[article.id]}
+              onSave={() => saveToNotion(article.id)}
             />
           ))}
         </ul>
