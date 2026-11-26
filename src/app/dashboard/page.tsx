@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AuthGate } from "@/components/auth-gate";
+import {
+  FetchNewsButton,
+  FetchNewsProvider,
+  FetchNewsStatus,
+} from "@/components/dashboard/fetch-news";
 import { NewsBoard } from "@/components/dashboard/news-board";
 import { NewsSkeleton } from "@/components/dashboard/news-skeleton";
 import { getDashboardData } from "@/lib/dashboard";
@@ -13,14 +18,17 @@ export const metadata: Metadata = {
 export default function DashboardPage() {
   return (
     <Suspense fallback={<p className="m-auto text-muted">불러오는 중…</p>}>
-      <AuthGate>
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6">
-          <h1 className="sr-only">뉴스 대시보드</h1>
-          <Suspense fallback={<NewsSkeleton />}>
-            <News />
-          </Suspense>
-        </main>
-      </AuthGate>
+      <FetchNewsProvider>
+        <AuthGate headerActions={<FetchNewsButton />}>
+          <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6">
+            <h1 className="sr-only">뉴스 대시보드</h1>
+            <FetchNewsStatus />
+            <Suspense fallback={<NewsSkeleton />}>
+              <News />
+            </Suspense>
+          </main>
+        </AuthGate>
+      </FetchNewsProvider>
     </Suspense>
   );
 }
