@@ -13,7 +13,11 @@ export async function getDashboardData() {
 
   const [categoryRows, articleRows] = await Promise.all([
     db
-      .select({ id: categories.id, name: categories.name })
+      .select({
+        id: categories.id,
+        name: categories.name,
+        description: categories.description,
+      })
       .from(categories)
       .orderBy(asc(categories.createdAt), asc(categories.id)),
     db

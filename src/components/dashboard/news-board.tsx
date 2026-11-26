@@ -1,8 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { NewsCard, type NewsCardArticle } from "./news-card";
+import { useRef, useState } from "react";
+import { CategoryForm, type Category } from "./category-form";
+import { CategoryActions, useReclassify } from "./category-toolbar";
+import {
+  NewsCard,
+  type NewsCardArticle,
+  type SummaryRequest,
+} from "./news-card";
 import { Pagination } from "./pagination";
+import { secondaryButton } from "./styles";
 
 const PAGE_SIZE = 9;
 
@@ -13,15 +20,23 @@ type Article = NewsCardArticle & { categoryId: number | null };
 const chip =
   "rounded-full border px-4 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
+// 필터 칩과 구분되도록 관리 버튼은 점선 테두리를 쓴다.
+const manageChip = `${chip} border-dashed border-muted text-muted hover:border-accent hover:text-accent`;
+
 export function NewsBoard({
   categories,
   articles,
 }: {
-  categories: { id: number; name: string }[];
+  categories: Category[];
   articles: Article[];
 }) {
   const [selected, setSelected] = useState<Filter>("all");
   const [page, setPage] = useState(1);
+  // 페이지나 필터를 바꿔도 남도록 이번에 만든 요약을 여기에 보관한다.
+  const [requests, setRequests] = useState<Record<number, SummaryRequest>>({});
+
+  const reclassification = useReclassify();
+  const allChipRef = useRef<HTMLButtonElement>(null);
 
   const hasUncategorized = articles.some((a) => a.categoryId === null);
   const filters: { value: Filter; label: string }[] = [
@@ -31,6 +46,13 @@ export function NewsBoard({
       ? [{ value: "uncategorized" as const, label: "미분류" }]
       : []),
   ];
+
+  // 선택한 칩이 사라지면(카테고리 삭제, 미분류 소진) '전체'로 돌아간다.
+  if (!filters.some(({ value }) => value === selected)) {
+    setSelected("all");
+    setPage(1);
+  }
+  const selectedCategory = categories.find(({ id }) => id === selected);
 
   const visible = articles.filter((a) => {
     if (selected === "all") return true;
@@ -46,7 +68,26 @@ export function NewsBoard({
     currentPage * PAGE_SIZE,
   );
 
+  async function loadSummary(id: number) {
+    const update = (request: SummaryRequest) =>
+      setRequests((current) => ({ ...current, [id]: request }));
+
+    update({ status: "loading" });
+    try {
+      const response = await fetch(`/api/articles/${id}/summary`, {
+        method: "POST",
+      });
+      if (!response.ok) throw new Error(`요약 요청 실패: ${response.status}`);
+      const { summary } = (await response.json()) as { summary: string };
+      update({ status: "done", summary });
+    } catch (error) {
+      console.error(error);
+      update({ status: "error" });
+    }
+  }
+
   function selectFilter(value: Filter) {
+    reclassification.clear();
     setSelected(value);
     setPage(1);
   }
@@ -63,6 +104,7 @@ export function NewsBoard({
           {filters.map(({ value, label }) => (
             <li key={value}>
               <button
+                ref={value === "all" ? allChipRef : undefined}
                 type="button"
                 aria-pressed={selected === value}
                 onClick={() => selectFilter(value)}
@@ -77,18 +119,48 @@ export function NewsBoard({
             </li>
           ))}
           <li>
-            {/* 카테고리 추가 기능은 아직 구현하지 않았다. */}
-            <button
-              type="button"
-              disabled
-              title="준비 중인 기능입니다."
-              className={`${chip} border-dashed border-muted text-muted disabled:cursor-not-allowed disabled:opacity-50`}
-            >
-              + 카테고리 추가
-            </button>
+            <CategoryForm className={manageChip}>+ 카테고리 추가</CategoryForm>
           </li>
+          {selectedCategory && (
+            <CategoryActions
+              key={selectedCategory.id}
+              category={selectedCategory}
+              className={manageChip}
+              // 삭제하면 열었던 버튼이 없어지므로 '전체' 칩으로 포커스를 옮긴다.
+              onDeleted={() => {
+                selectFilter("all");
+                allChipRef.current?.focus();
+              }}
+            />
+          )}
         </ul>
       </nav>
+
+      {selected === "uncategorized" && (
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={reclassification.run}
+            disabled={reclassification.pending}
+            className={secondaryButton}
+          >
+            {reclassification.pending ? "분류하는 중…" : "미분류 다시 분류"}
+          </button>
+        </div>
+      )}
+
+      {/* 화면 낭독기가 변화를 읽도록 status 영역은 항상 둔다. */}
+      <p
+        role="status"
+        className={reclassification.message ? "mt-3 text-sm" : "sr-only"}
+      >
+        {reclassification.message}
+      </p>
+      {reclassification.error && (
+        <p role="alert" className="mt-3 text-sm text-danger">
+          {reclassification.error}
+        </p>
+      )}
 
       {visible.length === 0 ? (
         <p className="py-16 text-center text-muted">
@@ -99,7 +171,12 @@ export function NewsBoard({
       ) : (
         <ul className="mt-6 grid grid-cols-1 items-start gap-4 md:grid-cols-2 lg:grid-cols-3">
           {pageArticles.map((article) => (
-            <NewsCard key={article.id} article={article} />
+            <NewsCard
+              key={article.id}
+              article={article}
+              request={requests[article.id]}
+              onLoadSummary={() => loadSummary(article.id)}
+            />
           ))}
         </ul>
       )}

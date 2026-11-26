@@ -14,12 +14,33 @@ export type NewsCardArticle = {
   publishedAtLabel: string;
 };
 
+export type SummaryRequest =
+  | { status: "loading" }
+  | { status: "error" }
+  | { status: "done"; summary: string };
+
 const focusRing =
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
-export function NewsCard({ article }: { article: NewsCardArticle }) {
+export function NewsCard({
+  article,
+  request,
+  onLoadSummary,
+}: {
+  article: NewsCardArticle;
+  request: SummaryRequest | undefined;
+  onLoadSummary: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const summaryId = useId();
+  const summary =
+    article.summaryKo ?? (request?.status === "done" ? request.summary : null);
+
+  function toggle() {
+    // 요청한 적이 없을 때만 만든다. 실패하면 '다시 시도'로 다시 요청한다.
+    if (!open && !summary && !request) onLoadSummary();
+    setOpen(!open);
+  }
 
   return (
     <li className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5 transition-shadow hover:shadow-sm">
@@ -32,7 +53,7 @@ export function NewsCard({ article }: { article: NewsCardArticle }) {
           type="button"
           aria-expanded={open}
           aria-controls={summaryId}
-          onClick={() => setOpen((value) => !value)}
+          onClick={toggle}
           className={`text-left hover:text-accent ${focusRing}`}
         >
           <span lang={article.titleKo ? undefined : "en"}>
@@ -41,15 +62,40 @@ export function NewsCard({ article }: { article: NewsCardArticle }) {
         </button>
       </h2>
 
-      {/* 요약 생성은 아직 구현하지 않아 저장된 요약만 보여준다. */}
-      <p
-        id={summaryId}
-        className={`text-[15px] leading-7 break-keep wrap-anywhere ${
-          open ? "whitespace-pre-line" : "line-clamp-2"
-        } ${article.summaryKo ? "" : "text-muted"}`}
-      >
-        {article.summaryKo ?? "아직 한국어 요약이 없습니다."}
-      </p>
+      <div id={summaryId} aria-live="polite">
+        {open && !summary && request?.status === "loading" ? (
+          <div role="status">
+            <span className="sr-only">요약을 만드는 중입니다.</span>
+            <div
+              aria-hidden="true"
+              className="flex animate-pulse flex-col gap-3 py-1.5 motion-reduce:animate-none"
+            >
+              <div className="h-4 w-full rounded bg-border" />
+              <div className="h-4 w-full rounded bg-border" />
+              <div className="h-4 w-2/3 rounded bg-border" />
+            </div>
+          </div>
+        ) : open && !summary && request?.status === "error" ? (
+          <div role="alert" className="flex flex-wrap items-center gap-3">
+            <p className="text-sm text-danger">요약을 만들지 못했습니다.</p>
+            <button
+              type="button"
+              onClick={onLoadSummary}
+              className={`rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-background ${focusRing}`}
+            >
+              다시 시도
+            </button>
+          </div>
+        ) : (
+          <p
+            className={`text-[15px] leading-7 break-keep wrap-anywhere ${
+              open ? "whitespace-pre-line" : "line-clamp-2"
+            } ${summary ? "" : "text-muted"}`}
+          >
+            {summary ?? "열면 한국어 요약을 만듭니다."}
+          </p>
+        )}
+      </div>
 
       <p className="text-xs text-muted">
         {article.source} ·{" "}

@@ -85,12 +85,20 @@ export function FetchNewsStatus() {
     }
   }
 
-  let error = "";
+  const errors: string[] = [];
   if (result?.status === "error") {
-    error = result.message;
-  } else if (result && result.failedSources.length > 0) {
-    error = `${result.failedSources.join(", ")}에서 뉴스를 가져오지 못했습니다. 다시 시도해 주세요.`;
+    errors.push(result.message);
+  } else if (result) {
+    if (result.failedSources.length > 0) {
+      errors.push(
+        `${result.failedSources.join(", ")}에서 뉴스를 가져오지 못했습니다.`,
+      );
+    }
+    if (result.processingFailed) {
+      errors.push("저장된 뉴스의 번역·분류에 실패했습니다.");
+    }
   }
+  const error = errors.length ? `${errors.join(" ")} 다시 시도해 주세요.` : "";
 
   return (
     <>
