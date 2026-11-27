@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { matchesKeyword } from "@/lib/search";
 import { CategoryForm, type Category } from "./category-form";
 import { CategoryActions, useReclassify } from "./category-toolbar";
 import {
@@ -10,6 +11,7 @@ import {
   type SummaryRequest,
 } from "./news-card";
 import { Pagination } from "./pagination";
+import { SearchForm } from "./search-form";
 import { secondaryButton } from "./styles";
 
 const PAGE_SIZE = 9;
@@ -33,6 +35,8 @@ export function NewsBoard({
 }) {
   const [selected, setSelected] = useState<Filter>("all");
   const [page, setPage] = useState(1);
+  // 검색을 실행한 검색어. 빈 문자열이면 검색하지 않는다.
+  const [keyword, setKeyword] = useState("");
   // 페이지나 필터를 바꿔도 남도록 이번에 만든 요약을 여기에 보관한다.
   const [requests, setRequests] = useState<Record<number, SummaryRequest>>({});
   const [saves, setSaves] = useState<Record<number, SaveRequest>>({});
@@ -56,11 +60,26 @@ export function NewsBoard({
   }
   const selectedCategory = categories.find(({ id }) => id === selected);
 
-  const visible = articles.filter((a) => {
+  // 화면에 아직 요약이 없으면 이번에 만든 요약을 쓴다.
+  function summaryOf(article: Article) {
+    const request = requests[article.id];
+    return (
+      article.summaryKo ??
+      (request?.status === "done" ? request.summary : null)
+    );
+  }
+
+  const inCategory = articles.filter((a) => {
     if (selected === "all") return true;
     if (selected === "uncategorized") return a.categoryId === null;
     return a.categoryId === selected;
   });
+  const visible = keyword
+    ? inCategory.filter((a) =>
+        // 번역한 제목을 보여줘도 원문 제목의 영문 키워드로 찾을 수 있게 한다.
+        matchesKeyword([a.titleKo, a.title, summaryOf(a)], keyword),
+      )
+    : inCategory;
 
   // 목록이 줄어 현재 페이지가 없어지면 마지막 페이지를 보여준다.
   const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
@@ -152,6 +171,11 @@ export function NewsBoard({
     setPage(1);
   }
 
+  function search(next: string) {
+    setKeyword(next);
+    setPage(1);
+  }
+
   function changePage(next: number) {
     setPage(next);
     window.scrollTo({ top: 0 });
@@ -159,42 +183,61 @@ export function NewsBoard({
 
   return (
     <>
-      <nav aria-label="카테고리">
-        <ul className="flex flex-wrap items-center gap-2">
-          {filters.map(({ value, label }) => (
-            <li key={value}>
-              <button
-                ref={value === "all" ? allChipRef : undefined}
-                type="button"
-                aria-pressed={selected === value}
-                onClick={() => selectFilter(value)}
-                className={`${chip} ${
-                  selected === value
-                    ? "border-accent bg-accent text-accent-foreground"
-                    : "border-border bg-surface text-muted hover:text-foreground"
-                }`}
-              >
-                {label}
-              </button>
+      {/* 좁은 화면에서는 검색창이 칩 아래로 내려간다. */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:gap-4">
+        <nav aria-label="카테고리" className="min-w-0 lg:flex-1">
+          <ul className="flex flex-wrap items-center gap-2">
+            {filters.map(({ value, label }) => (
+              <li key={value}>
+                <button
+                  ref={value === "all" ? allChipRef : undefined}
+                  type="button"
+                  aria-pressed={selected === value}
+                  onClick={() => selectFilter(value)}
+                  className={`${chip} ${
+                    selected === value
+                      ? "border-accent bg-accent text-accent-foreground"
+                      : "border-border bg-surface text-muted hover:text-foreground"
+                  }`}
+                >
+                  {label}
+                </button>
+              </li>
+            ))}
+            <li>
+              <CategoryForm className={manageChip}>+ 카테고리 추가</CategoryForm>
             </li>
-          ))}
-          <li>
-            <CategoryForm className={manageChip}>+ 카테고리 추가</CategoryForm>
-          </li>
-          {selectedCategory && (
-            <CategoryActions
-              key={selectedCategory.id}
-              category={selectedCategory}
-              className={manageChip}
-              // 삭제하면 열었던 버튼이 없어지므로 '전체' 칩으로 포커스를 옮긴다.
-              onDeleted={() => {
-                selectFilter("all");
-                allChipRef.current?.focus();
-              }}
-            />
-          )}
-        </ul>
-      </nav>
+            {selectedCategory && (
+              <CategoryActions
+                key={selectedCategory.id}
+                category={selectedCategory}
+                className={manageChip}
+                // 삭제하면 열었던 버튼이 없어지므로 '전체' 칩으로 포커스를 옮긴다.
+                onDeleted={() => {
+                  selectFilter("all");
+                  allChipRef.current?.focus();
+                }}
+              />
+            )}
+          </ul>
+        </nav>
+
+        <div className="w-full sm:ml-auto sm:w-96 lg:w-80 lg:shrink-0">
+          <SearchForm applied={keyword} onSearch={search} />
+        </div>
+      </div>
+
+      {/* 화면 낭독기가 변화를 읽도록 status 영역은 항상 둔다. */}
+      <p
+        role="status"
+        className={
+          keyword
+            ? "mt-3 text-sm text-muted wrap-anywhere sm:text-right"
+            : "sr-only"
+        }
+      >
+        {keyword ? `'${keyword}' 검색 결과 ${visible.length}건` : ""}
+      </p>
 
       {selected === "uncategorized" && (
         <div className="mt-3">
@@ -226,7 +269,9 @@ export function NewsBoard({
         <p className="py-16 text-center text-muted">
           {articles.length === 0
             ? "아직 수집된 뉴스가 없습니다. 상단의 가져오기 버튼을 눌러 주세요."
-            : "이 카테고리에는 뉴스가 없습니다."}
+            : inCategory.length === 0
+              ? "이 카테고리에는 뉴스가 없습니다."
+              : "검색어와 일치하는 뉴스가 없습니다."}
         </p>
       ) : (
         <ul className="mt-6 grid grid-cols-1 items-start gap-4 md:grid-cols-2 lg:grid-cols-3">
