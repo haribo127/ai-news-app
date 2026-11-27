@@ -53,6 +53,12 @@ async function News({ searchParams }: { searchParams: SearchParams }) {
   return (
     <>
       <NotionNotice result={notion} />
+      {/* 필터·검색과 상관없이 DB에 있는 전체 개수다. 목록 조회는 개수를 제한하지 않는다. */}
+      <p className="mb-3">
+        <span className="inline-block rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-medium text-muted">
+          총 {articles.length.toLocaleString("ko-KR")}개의 뉴스
+        </span>
+      </p>
       <NewsBoard
         categories={categories}
         articles={articles.map(({ publishedAt, ...article }) => ({
