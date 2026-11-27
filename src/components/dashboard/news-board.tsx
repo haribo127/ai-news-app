@@ -1,11 +1,16 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { startTransition, useRef, useState } from "react";
+import {
+  deleteArticle,
+  type DeleteArticleResult,
+} from "@/app/dashboard/article-actions";
 import { matchesKeyword } from "@/lib/search";
 import { CategoryForm, type Category } from "./category-form";
 import { CategoryActions, useReclassify } from "./category-toolbar";
 import {
   NewsCard,
+  type DeleteRequest,
   type NewsCardArticle,
   type SaveRequest,
   type SummaryRequest,
@@ -40,6 +45,9 @@ export function NewsBoard({
   // 페이지나 필터를 바꿔도 남도록 이번에 만든 요약을 여기에 보관한다.
   const [requests, setRequests] = useState<Record<number, SummaryRequest>>({});
   const [saves, setSaves] = useState<Record<number, SaveRequest>>({});
+  const [deletes, setDeletes] = useState<Record<number, DeleteRequest>>({});
+  const [deleteMessage, setDeleteMessage] = useState("");
+  const listRef = useRef<HTMLDivElement>(null);
 
   const reclassification = useReclassify();
   const allChipRef = useRef<HTMLButtonElement>(null);
@@ -165,7 +173,50 @@ export function NewsBoard({
     }
   }
 
+  // 누른 버튼이 없어지므로 포커스를 목록으로 옮긴다. 다른 곳을 보고 있으면 둔다.
+  function focusListAfterDelete(id: number) {
+    const focused = document.activeElement;
+    if (
+      !focused ||
+      focused === document.body ||
+      focused.closest(`[data-article-id="${id}"]`)
+    ) {
+      listRef.current?.focus({ preventScroll: true });
+    }
+  }
+
+  function removeArticle(id: number) {
+    const update = (request: DeleteRequest) =>
+      setDeletes((current) => ({ ...current, [id]: request }));
+
+    update({ status: "deleting" });
+    setDeleteMessage("");
+    startTransition(async () => {
+      let result: DeleteArticleResult;
+      try {
+        result = await deleteArticle(id);
+      } catch (error) {
+        console.error(error);
+        result = {
+          status: "error",
+          message: "뉴스를 삭제하지 못했습니다. 연결을 확인하고 다시 시도해 주세요.",
+        };
+      }
+      // await 뒤의 갱신은 다시 감싸야 목록과 함께 반영된다.
+      startTransition(() => {
+        if (result.status === "error") {
+          update({ status: "error", message: result.message });
+          return;
+        }
+        // 성공하면 '삭제 중' 상태를 남겨 둔 채 새 목록에서 카드가 빠진다.
+        setDeleteMessage("뉴스를 삭제했습니다.");
+        focusListAfterDelete(id);
+      });
+    });
+  }
+
   function selectFilter(value: Filter) {
+    setDeleteMessage("");
     reclassification.clear();
     setSelected(value);
     setPage(1);
@@ -265,28 +316,43 @@ export function NewsBoard({
         </p>
       )}
 
-      {visible.length === 0 ? (
-        <p className="py-16 text-center text-muted">
-          {articles.length === 0
-            ? "아직 수집된 뉴스가 없습니다. 상단의 가져오기 버튼을 눌러 주세요."
-            : inCategory.length === 0
-              ? "이 카테고리에는 뉴스가 없습니다."
-              : "검색어와 일치하는 뉴스가 없습니다."}
-        </p>
-      ) : (
-        <ul className="mt-6 grid grid-cols-1 items-start gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {pageArticles.map((article) => (
-            <NewsCard
-              key={article.id}
-              article={article}
-              request={requests[article.id]}
-              onLoadSummary={() => loadSummary(article.id)}
-              saveRequest={saves[article.id]}
-              onSave={() => saveToNotion(article.id)}
-            />
-          ))}
-        </ul>
-      )}
+      {/* 화면 낭독기가 삭제 완료를 읽도록 status 영역은 항상 둔다. */}
+      <p role="status" className="sr-only">
+        {deleteMessage}
+      </p>
+
+      <div
+        ref={listRef}
+        tabIndex={-1}
+        role="region"
+        aria-label="뉴스 목록"
+        className="focus:outline-none"
+      >
+        {visible.length === 0 ? (
+          <p className="py-16 text-center text-muted">
+            {articles.length === 0
+              ? "아직 수집된 뉴스가 없습니다. 상단의 가져오기 버튼을 눌러 주세요."
+              : inCategory.length === 0
+                ? "이 카테고리에는 뉴스가 없습니다."
+                : "검색어와 일치하는 뉴스가 없습니다."}
+          </p>
+        ) : (
+          <ul className="mt-6 grid grid-cols-1 items-start gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {pageArticles.map((article) => (
+              <NewsCard
+                key={article.id}
+                article={article}
+                request={requests[article.id]}
+                onLoadSummary={() => loadSummary(article.id)}
+                saveRequest={saves[article.id]}
+                onSave={() => saveToNotion(article.id)}
+                deleteRequest={deletes[article.id]}
+                onDelete={() => removeArticle(article.id)}
+              />
+            ))}
+          </ul>
+        )}
+      </div>
 
       {totalPages > 1 && (
         <Pagination

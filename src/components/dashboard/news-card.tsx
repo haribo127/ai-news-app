@@ -25,6 +25,10 @@ export type SaveRequest =
   | { status: "error"; message: string }
   | { status: "saved" };
 
+export type DeleteRequest =
+  | { status: "deleting" }
+  | { status: "error"; message: string };
+
 const focusRing =
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
@@ -34,12 +38,16 @@ export function NewsCard({
   onLoadSummary,
   saveRequest,
   onSave,
+  deleteRequest,
+  onDelete,
 }: {
   article: NewsCardArticle;
   request: SummaryRequest | undefined;
   onLoadSummary: () => void;
   saveRequest: SaveRequest | undefined;
   onSave: () => void;
+  deleteRequest: DeleteRequest | undefined;
+  onDelete: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const summaryId = useId();
@@ -51,6 +59,10 @@ export function NewsCard({
   const saveError =
     !saved && saveRequest?.status === "error" ? saveRequest.message : null;
 
+  const deleting = deleteRequest?.status === "deleting";
+  const deleteError =
+    deleteRequest?.status === "error" ? deleteRequest.message : null;
+
   function toggle() {
     // 요청한 적이 없을 때만 만든다. 실패하면 '다시 시도'로 다시 요청한다.
     if (!open && !summary && !request) onLoadSummary();
@@ -58,10 +70,36 @@ export function NewsCard({
   }
 
   return (
-    <li className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5 transition-shadow hover:shadow-sm">
-      <span className="self-start rounded-full bg-accent-soft px-2.5 py-1 text-xs font-medium text-foreground">
-        {article.categoryName ?? "미분류"}
-      </span>
+    <li
+      data-article-id={article.id}
+      className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5 transition-shadow hover:shadow-sm"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <span className="rounded-full bg-accent-soft px-2.5 py-1 text-xs font-medium text-foreground">
+          {article.categoryName ?? "미분류"}
+        </span>
+        {/* 저장 중에 지우면 Notion 페이지만 만들어지고 저장 기록이 남지 않는다. */}
+        <button
+          type="button"
+          aria-label={`'${article.titleKo ?? article.title}' 뉴스 삭제`}
+          title="삭제"
+          onClick={onDelete}
+          disabled={deleting || saving}
+          className={`-mt-2 -mr-2 flex size-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-background hover:text-danger disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted ${focusRing}`}
+        >
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+            className="size-4"
+          >
+            <path d="M4 4l8 8M12 4l-8 8" />
+          </svg>
+        </button>
+      </div>
 
       <h2 className="text-base font-semibold leading-snug break-keep wrap-anywhere">
         <button
@@ -131,7 +169,7 @@ export function NewsCard({
         <button
           type="button"
           onClick={onSave}
-          disabled={saved || saving}
+          disabled={saved || saving || deleting}
           className={`rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-background disabled:cursor-not-allowed disabled:hover:bg-transparent ${
             saved ? "text-success" : "disabled:opacity-50"
           } ${focusRing}`}
@@ -153,6 +191,11 @@ export function NewsCard({
       {saveError && (
         <p role="alert" className="text-sm text-danger">
           {saveError}
+        </p>
+      )}
+      {deleteError && (
+        <p role="alert" className="text-sm text-danger">
+          {deleteError}
         </p>
       )}
     </li>

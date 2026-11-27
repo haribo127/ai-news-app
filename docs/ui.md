@@ -229,7 +229,7 @@ body {
 
 위에서부터 다음 순서로 배치한다.
 
-1. 카테고리 배지 (없으면 `미분류`)
+1. 카테고리 배지 (없으면 `미분류`, 왼쪽), 삭제(X) 버튼(오른쪽 상단, §5.7)
 2. 제목: `titleKo`, 번역 전이면 원문 `title`
 3. 요약
 4. 출처 · 발행 시각
@@ -253,9 +253,15 @@ body {
 
 ```html
 <li class="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5 transition-shadow hover:shadow-sm">
-  <span class="self-start rounded-full bg-accent-soft px-2.5 py-1 text-xs font-medium text-foreground">
-    모델/연구
-  </span>
+  <div class="flex items-start justify-between gap-3">
+    <span class="rounded-full bg-accent-soft px-2.5 py-1 text-xs font-medium text-foreground">
+      모델/연구
+    </span>
+    <button type="button" aria-label="'카드 제목' 뉴스 삭제" title="삭제"
+      class="-mt-2 -mr-2 flex size-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-background hover:text-danger">
+      <!-- 16px X 아이콘(svg, aria-hidden) -->
+    </button>
+  </div>
 
   <h2 class="text-base font-semibold leading-snug break-keep wrap-anywhere">
     <button type="button" aria-expanded="false" class="text-left hover:text-accent">
@@ -347,6 +353,21 @@ Notion이 연결되지 않았으면 `Notion 저장`을 눌렀을 때 연결 절�
 - 1024px 이상에서는 폭 `w-80`으로 첫 줄 오른쪽에 두고, 칩은 남은 폭 안에서 줄바꿈한다. 그보다 좁으면 칩 아래로 내려 640px 이상은 폭 `w-96`의 오른쪽 정렬, 그 미만은 전체 폭으로 놓는다.
 - 폼에는 `role="search"`를 붙인다. `<label>`은 화면에서 숨긴다(`sr-only`). 입력창은 §6의 클래스에 `min-w-0 flex-1`을 더하며(`w-full` 대신), 100자까지 입력한다.
 - 폼 안 요소 사이 간격은 `gap-2`다. `검색`은 주요 버튼, `초기화`는 보조 버튼이며 페이지 배경 위라서 hover 배경은 `surface`를 쓴다.
+
+### 5.7 삭제 버튼
+
+카드 오른쪽 상단의 X 버튼을 누르면 확인 대화상자 없이 바로 기사를 DB에서 삭제한다.
+
+| 상태 | 표시 | 동작 |
+|---|---|---|
+| 기본 | X 아이콘 (`text-muted`, hover `text-danger`) | 클릭 가능 |
+| 삭제 중 | 흐리게 | 비활성. 같은 카드의 `Notion 저장`도 비활성 |
+| Notion 저장 중 | 흐리게 | 비활성 |
+| 실패 | 카드를 남기고 카드 안 오류 문구 (`text-sm text-danger`, `role="alert"`) | 클릭 가능 |
+
+- 삭제에 성공하면 카드를 목록에서 없앤다. 숨겨 둔 `role="status"` 영역으로 "뉴스를 삭제했습니다."를 알리고, 포커스는 목록 영역으로 옮긴다. 스크롤은 옮기지 않는다.
+- 마지막 페이지의 카드를 모두 지우면 앞 페이지를 보여준다. 목록이 비면 §7의 빈 목록 문구를 보여준다.
+- Notion에 저장한 페이지는 삭제하지 않는다.
 
 ## 6. 버튼과 입력
 
