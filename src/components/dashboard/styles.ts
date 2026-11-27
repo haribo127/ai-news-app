@@ -1,3 +1,7 @@
+// 대시보드 본문(docs/ui.md §3.2). 실제 화면과 로딩 화면이 같아야 한다.
+export const dashboardMain =
+  "mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6";
+
 // docs/ui.md §6의 버튼과 대화상자 클래스.
 export const focusRing =
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";

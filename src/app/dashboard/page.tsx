@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AuthGate } from "@/components/auth-gate";
+import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import {
   FetchNewsButton,
   FetchNewsProvider,
@@ -9,6 +10,7 @@ import {
 import { NewsBoard } from "@/components/dashboard/news-board";
 import { NewsSkeleton } from "@/components/dashboard/news-skeleton";
 import { NotionNotice } from "@/components/dashboard/notion-notice";
+import { dashboardMain } from "@/components/dashboard/styles";
 import { getDashboardData } from "@/lib/dashboard";
 import { formatPublishedAt } from "@/lib/format-date";
 
@@ -27,10 +29,10 @@ export default function DashboardPage({
   searchParams: SearchParams;
 }) {
   return (
-    <Suspense fallback={<p className="m-auto text-muted">불러오는 중…</p>}>
+    <Suspense fallback={<DashboardSkeleton />}>
       <FetchNewsProvider>
         <AuthGate headerActions={<FetchNewsButton />}>
-          <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6">
+          <main className={dashboardMain}>
             <h1 className="sr-only">뉴스 대시보드</h1>
             <FetchNewsStatus />
             <Suspense fallback={<NewsSkeleton />}>
