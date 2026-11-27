@@ -21,6 +21,10 @@
 - `npm run db:generate`(`src/db/schema.ts` 변경분으로 마이그레이션 생성) / `npm run db:migrate`(`DATABASE_URL_UNPOOLED` 대상에 적용). 새 마이그레이션은 Neon 테스트 브랜치에서 먼저 확인한 뒤 production에 적용한다.
 - 환경변수는 `.env.example` 참고, 실제 값은 `.env.local`에 둔다(커밋 금지).
 
+## 개발 워크플로
+- 새 기능을 개발할 때는 `/news-workflow [브랜치 이름]` 명령을 사용한다(정의: `.claude/commands/news-workflow.md`). 사용자가 직접 실행하며, 단계별 상세 규칙은 명령 파일이 기준이다.
+- 흐름: 현재 상태·`main` 브랜치 확인 → 새 브랜치 생성(영어 소문자-하이픈, 이름이 없으면 개발할 기능을 묻고 제안) → 개발 안내 → '완료'/'DONE' 입력 시 변경 파일과 커밋 메시지 제안 → 확인 후 커밋하고 `main`에 병합 → 작업 요약. push와 브랜치 삭제는 하지 않는다.
+
 ## 뉴스 소스
 - TechCrunch AI: https://techcrunch.com/category/artificial-intelligence/feed/
 - The Verge AI: https://www.theverge.com/rss/ai-artificial-intelligence/index.xml
