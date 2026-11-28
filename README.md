@@ -150,3 +150,8 @@ docs/                   # 프로젝트 문서
 - [요구사항 (PRD)](docs/PRD.md)
 - [UI 가이드](docs/ui.md)
 - [Notion 저장 구현 계획과 확인 내역](docs/notion-plan.md)
+
+## 사용한 플러그인
+
+- Frontend Design: UI 디자인 품질 향상
+- commit-commands: 깃 워크플로 자동화
