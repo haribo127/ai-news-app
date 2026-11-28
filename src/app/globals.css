@@ -5,8 +5,10 @@
   --background: #f8fafc;
   --surface: #ffffff;
   --foreground: #0f172a;
+  --body: #334155;
   --muted: #475569;
   --border: #e2e8f0;
+  --border-strong: #94a3b8;
   --accent: #2563eb;
   --accent-foreground: #ffffff;
   --accent-soft: #eff6ff;
@@ -20,8 +22,10 @@
     --background: #0b0f17;
     --surface: #151b26;
     --foreground: #e5e7eb;
+    --body: #bcc5d3;
     --muted: #9ca3af;
     --border: #273041;
+    --border-strong: #4b5a73;
     --accent: #60a5fa;
     --accent-foreground: #0b0f17;
     --accent-soft: #172a46;
@@ -34,8 +38,10 @@
   --color-background: var(--background);
   --color-surface: var(--surface);
   --color-foreground: var(--foreground);
+  --color-body: var(--body);
   --color-muted: var(--muted);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent-soft: var(--accent-soft);

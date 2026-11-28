@@ -25,8 +25,10 @@ Tailwind CSS v4를 사용한다. 설정 파일 없이 `src/app/globals.css`의 `
 | `background` | `#f8fafc` | `#0b0f17` | 페이지 배경 |
 | `surface` | `#ffffff` | `#151b26` | 헤더, 카드, 대화상자 |
 | `foreground` | `#0f172a` | `#e5e7eb` | 제목, 본문 |
+| `body` | `#334155` | `#bcc5d3` | 카드 요약 본문 |
 | `muted` | `#475569` | `#9ca3af` | 메타 정보, 보조 설명 |
 | `border` | `#e2e8f0` | `#273041` | 테두리, 구분선 |
+| `border-strong` | `#94a3b8` | `#4b5a73` | hover·포커스·펼침 상태의 카드 테두리 |
 | `accent` | `#2563eb` | `#60a5fa` | 주요 버튼, 링크, 포커스 링 |
 | `accent-foreground` | `#ffffff` | `#0b0f17` | `accent` 배경 위의 글자 |
 | `accent-soft` | `#eff6ff` | `#172a46` | 카테고리 배지 배경 |
@@ -41,8 +43,10 @@ Tailwind CSS v4를 사용한다. 설정 파일 없이 `src/app/globals.css`의 `
   --background: #f8fafc;
   --surface: #ffffff;
   --foreground: #0f172a;
+  --body: #334155;
   --muted: #475569;
   --border: #e2e8f0;
+  --border-strong: #94a3b8;
   --accent: #2563eb;
   --accent-foreground: #ffffff;
   --accent-soft: #eff6ff;
@@ -56,8 +60,10 @@ Tailwind CSS v4를 사용한다. 설정 파일 없이 `src/app/globals.css`의 `
     --background: #0b0f17;
     --surface: #151b26;
     --foreground: #e5e7eb;
+    --body: #bcc5d3;
     --muted: #9ca3af;
     --border: #273041;
+    --border-strong: #4b5a73;
     --accent: #60a5fa;
     --accent-foreground: #0b0f17;
     --accent-soft: #172a46;
@@ -70,8 +76,10 @@ Tailwind CSS v4를 사용한다. 설정 파일 없이 `src/app/globals.css`의 `
   --color-background: var(--background);
   --color-surface: var(--surface);
   --color-foreground: var(--foreground);
+  --color-body: var(--body);
   --color-muted: var(--muted);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent-soft: var(--accent-soft);
@@ -97,8 +105,9 @@ body {
 |---|---|
 | 앱 이름 | `text-lg font-semibold tracking-tight` |
 | 화면·대화상자 제목 | `text-xl font-semibold` |
-| 카드 제목 | `text-base font-semibold leading-snug` |
-| 요약 본문 | `text-[15px] leading-7` |
+| 카드 제목 | `text-lg font-semibold leading-[1.45] tracking-[-0.01em] text-balance` |
+| 요약 본문 | `text-[15px] leading-7 text-body` |
+| 카드 출처·시각, 원문 제목 | `text-[13px] leading-5` (출처는 `font-semibold`, 시각과 원문 제목은 `text-muted`) |
 | 버튼, 카테고리 칩 | `text-sm font-medium` |
 | 메타 정보, 배지 | `text-xs` |
 
@@ -116,7 +125,7 @@ body {
 | 카드·대화상자 모서리 | `rounded-xl` |
 | 버튼·입력창 모서리 | `rounded-lg` |
 | 칩·배지 모서리 | `rounded-full` |
-| 그림자 | 기본 없음, 카드 hover에만 `shadow-sm` |
+| 그림자 | 기본 없음, 카드 hover에만 `shadow-md` |
 
 ## 3. 화면 구조
 
@@ -132,11 +141,11 @@ body {
 │ (규제/정책)(기타)(+ 카테고리 추가)(수정)(삭제)               │
 │                                                              │
 │ ┌────────────────┐ ┌────────────────┐ ┌────────────────┐     │
-│ │ [배지]         │ │ [배지]         │ │ [배지]         │     │  카드 목록
+│ │ 출처 시각    ✕ │ │ 출처 시각    ✕ │ │ 출처 시각    ✕ │     │  카드 목록
 │ │ 제목           │ │ 제목           │ │ 제목           │     │
 │ │ 요약 미리보기  │ │ 요약 미리보기  │ │ 요약 미리보기  │     │
-│ │ 출처 · 시각    │ │ 출처 · 시각    │ │ 출처 · 시각    │     │
-│ │ 원문    [저장] │ │ 원문    [저장] │ │ 원문    [저장] │     │
+│ │ ───────────    │ │ ───────────    │ │ ───────────    │     │
+│ │ [배지] 원문저장│ │ [배지] 원문저장│ │ [배지] 원문저장│     │
 │ └────────────────┘ └────────────────┘ └────────────────┘     │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -248,11 +257,22 @@ body {
 
 위에서부터 다음 순서로 배치한다.
 
-1. 카테고리 배지 (없으면 `미분류`, 왼쪽), 삭제(X) 버튼(오른쪽 상단, §5.7)
+1. 출처와 발행 시각(왼쪽), 삭제(X) 버튼(오른쪽 상단, §5.7)
 2. 제목: `titleKo`, 번역 전이면 원문 `title`
-3. 요약
-4. 출처 · 발행 시각
-5. `원문 보기` 링크(왼쪽), `Notion 저장` 버튼(오른쪽)
+3. 원문 제목: 카드를 펼쳤고 `titleKo`가 있을 때만 (`lang="en"`)
+4. 요약
+5. 구분선 아래에 카테고리 배지(없으면 `미분류`, 왼쪽), `원문 보기` 링크와 `Notion 저장` 버튼(오른쪽)
+
+- 출처와 시각은 가운뎃점으로 잇지 않고 간격과 굵기로 구분한다.
+- 카드 안은 일정한 `gap` 대신 위 여백으로 묶음을 나눈다: 제목 `mt-2`, 원문 제목 `mt-1.5`, 요약 `mt-3`, 하단 줄 `mt-5`.
+- 카테고리 이름이 길면 배지 안에서 말줄임한다. 폭이 모자라면 링크와 버튼이 다음 줄 오른쪽으로 내려간다.
+
+hover·포커스 동작:
+
+- 카드: 마우스를 올리거나 안쪽에 포커스가 있으면 테두리를 `border-strong`으로 바꾼다. hover에는 `shadow-md`를 더한다. 펼친 카드는 `border-strong`을 유지한다.
+- 카드를 위로 띄우거나 확대하지 않는다. 카드 전체가 클릭 영역이 아니기 때문이다.
+- 제목은 hover에 `text-accent`와 밑줄, `원문 보기`는 `bg-accent-soft`로 바꾼다.
+- 전환은 200ms 이하로 하고 `motion-reduce:transition-none`을 더한다.
 
 ### 5.2 접힘과 펼침
 
@@ -271,40 +291,42 @@ body {
 - 번역 전의 영문 제목에는 `lang="en"`을 붙인다.
 
 ```html
-<li class="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5 transition-shadow hover:shadow-sm">
+<li class="flex flex-col rounded-xl border border-border bg-surface p-5 transition-[border-color,box-shadow] duration-200 hover:border-border-strong hover:shadow-md focus-within:border-border-strong motion-reduce:transition-none">
   <div class="flex items-start justify-between gap-3">
-    <span class="rounded-full bg-accent-soft px-2.5 py-1 text-xs font-medium text-foreground">
-      모델/연구
-    </span>
+    <p class="flex min-w-0 flex-wrap items-baseline gap-x-2.5 text-[13px] leading-5">
+      <span class="font-semibold">TechCrunch</span>
+      <time datetime="2026-11-25T09:00:00+09:00" class="text-muted tabular-nums">11월 25일 09:00</time>
+    </p>
     <button type="button" aria-label="'카드 제목' 뉴스 삭제" title="삭제"
       class="-mt-2 -mr-2 flex size-9 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-background hover:text-danger">
       <!-- 16px X 아이콘(svg, aria-hidden) -->
     </button>
   </div>
 
-  <h2 class="text-base font-semibold leading-snug break-keep wrap-anywhere">
-    <button type="button" aria-expanded="false" class="text-left hover:text-accent">
+  <h2 class="mt-2 text-lg font-semibold leading-[1.45] tracking-[-0.01em] text-balance break-keep wrap-anywhere">
+    <button type="button" aria-expanded="false" class="text-left decoration-2 underline-offset-4 transition-colors hover:text-accent hover:underline motion-reduce:transition-none">
       카드 제목
     </button>
   </h2>
 
-  <p class="line-clamp-2 text-[15px] leading-7 break-keep wrap-anywhere">
+  <p class="mt-3 line-clamp-2 text-[15px] leading-7 text-body break-keep wrap-anywhere">
     요약 미리보기
   </p>
 
-  <p class="text-xs text-muted">
-    TechCrunch · <time datetime="2026-11-25T09:00:00+09:00">11월 25일 09:00</time>
-  </p>
-
-  <div class="flex items-center justify-between border-t border-border pt-3">
-    <a href="https://example.com" target="_blank" rel="noopener noreferrer"
-      class="text-sm font-medium text-accent hover:underline">
-      원문 보기 ↗
-    </a>
-    <button type="button"
-      class="rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-background">
-      Notion 저장
-    </button>
+  <div class="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-border pt-3">
+    <span class="max-w-full truncate rounded-full bg-accent-soft px-2.5 py-1 text-xs font-medium text-foreground">
+      모델/연구
+    </span>
+    <div class="ml-auto flex items-center gap-2">
+      <a href="https://example.com" target="_blank" rel="noopener noreferrer"
+        class="inline-flex min-h-9 items-center rounded-lg px-2 text-sm font-medium whitespace-nowrap text-accent hover:bg-accent-soft">
+        원문 보기 ↗
+      </a>
+      <button type="button"
+        class="min-h-9 rounded-lg border border-border px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors hover:border-border-strong hover:bg-background motion-reduce:transition-none">
+        Notion 저장
+      </button>
+    </div>
   </div>
 </li>
 ```

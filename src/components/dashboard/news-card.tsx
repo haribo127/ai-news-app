@@ -26,8 +26,7 @@ export type SaveRequest =
   | { status: "saved" };
 
 export type DeleteRequest =
-  | { status: "deleting" }
-  | { status: "error"; message: string };
+  { status: "deleting" } | { status: "error"; message: string };
 
 const focusRing =
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
@@ -72,12 +71,20 @@ export function NewsCard({
   return (
     <li
       data-article-id={article.id}
-      className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5 transition-shadow hover:shadow-sm"
+      className={`flex flex-col rounded-xl border bg-surface p-5 transition-[border-color,box-shadow] duration-200 hover:border-border-strong hover:shadow-md focus-within:border-border-strong motion-reduce:transition-none ${
+        open ? "border-border-strong" : "border-border"
+      }`}
     >
       <div className="flex items-start justify-between gap-3">
-        <span className="rounded-full bg-accent-soft px-2.5 py-1 text-xs font-medium text-foreground">
-          {article.categoryName ?? "미분류"}
-        </span>
+        <p className="flex min-w-0 flex-wrap items-baseline gap-x-2.5 text-[13px] leading-5">
+          <span className="font-semibold">{article.source}</span>
+          <time
+            dateTime={article.publishedAtIso}
+            className="text-muted tabular-nums"
+          >
+            {article.publishedAtLabel}
+          </time>
+        </p>
         {/* 저장 중에 지우면 Notion 페이지만 만들어지고 저장 기록이 남지 않는다. */}
         <button
           type="button"
@@ -101,13 +108,13 @@ export function NewsCard({
         </button>
       </div>
 
-      <h2 className="text-base font-semibold leading-snug break-keep wrap-anywhere">
+      <h2 className="mt-2 text-lg font-semibold leading-[1.45] tracking-[-0.01em] text-balance break-keep wrap-anywhere">
         <button
           type="button"
           aria-expanded={open}
           aria-controls={summaryId}
           onClick={toggle}
-          className={`text-left hover:text-accent ${focusRing}`}
+          className={`text-left decoration-2 underline-offset-4 transition-colors hover:text-accent hover:underline motion-reduce:transition-none ${focusRing}`}
         >
           <span lang={article.titleKo ? undefined : "en"}>
             {article.titleKo ?? article.title}
@@ -115,7 +122,17 @@ export function NewsCard({
         </button>
       </h2>
 
-      <div id={summaryId} aria-live="polite">
+      {/* 번역한 제목을 보여줄 때만, 펼치면 원문 용어를 확인할 수 있게 한다. */}
+      {open && article.titleKo && (
+        <p
+          lang="en"
+          className="mt-1.5 text-[13px] leading-5 text-muted wrap-anywhere"
+        >
+          {article.title}
+        </p>
+      )}
+
+      <div id={summaryId} aria-live="polite" className="mt-3">
         {open && !summary && request?.status === "loading" ? (
           <div role="status">
             <span className="sr-only">요약을 만드는 중입니다.</span>
@@ -143,45 +160,43 @@ export function NewsCard({
           <p
             className={`text-[15px] leading-7 break-keep wrap-anywhere ${
               open ? "whitespace-pre-line" : "line-clamp-2"
-            } ${summary ? "" : "text-muted"}`}
+            } ${summary ? "text-body" : "text-muted"}`}
           >
             {summary ?? "열면 한국어 요약을 만듭니다."}
           </p>
         )}
       </div>
 
-      <p className="text-xs text-muted">
-        {article.source} ·{" "}
-        <time dateTime={article.publishedAtIso}>
-          {article.publishedAtLabel}
-        </time>
-      </p>
-
-      <div className="flex items-center justify-between border-t border-border pt-3">
-        <a
-          href={article.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`text-sm font-medium text-accent hover:underline ${focusRing}`}
-        >
-          원문 보기 ↗
-        </a>
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={saved || saving || deleting}
-          className={`rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-background disabled:cursor-not-allowed disabled:hover:bg-transparent ${
-            saved ? "text-success" : "disabled:opacity-50"
-          } ${focusRing}`}
-        >
-          {saved
-            ? "✓ 저장됨"
-            : saving
-              ? "저장 중…"
-              : saveError
-                ? "다시 저장"
-                : "Notion 저장"}
-        </button>
+      <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-border pt-3">
+        <span className="max-w-full truncate rounded-full bg-accent-soft px-2.5 py-1 text-xs font-medium text-foreground">
+          {article.categoryName ?? "미분류"}
+        </span>
+        <div className="ml-auto flex items-center gap-2">
+          <a
+            href={article.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`inline-flex min-h-9 items-center rounded-lg px-2 text-sm font-medium whitespace-nowrap text-accent hover:bg-accent-soft ${focusRing}`}
+          >
+            원문 보기 ↗
+          </a>
+          <button
+            type="button"
+            onClick={onSave}
+            disabled={saved || saving || deleting}
+            className={`min-h-9 rounded-lg border border-border px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors hover:border-border-strong hover:bg-background disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:bg-transparent motion-reduce:transition-none ${
+              saved ? "text-success" : "disabled:opacity-50"
+            } ${focusRing}`}
+          >
+            {saved
+              ? "✓ 저장됨"
+              : saving
+                ? "저장 중…"
+                : saveError
+                  ? "다시 저장"
+                  : "Notion 저장"}
+          </button>
+        </div>
       </div>
 
       {/* 화면 낭독기가 저장 완료를 읽도록 status 영역은 항상 둔다. */}
@@ -189,12 +204,12 @@ export function NewsCard({
         {saveRequest?.status === "saved" ? "Notion에 저장했습니다." : ""}
       </p>
       {saveError && (
-        <p role="alert" className="text-sm text-danger">
+        <p role="alert" className="mt-3 text-sm text-danger">
           {saveError}
         </p>
       )}
       {deleteError && (
-        <p role="alert" className="text-sm text-danger">
+        <p role="alert" className="mt-3 text-sm text-danger">
           {deleteError}
         </p>
       )}
